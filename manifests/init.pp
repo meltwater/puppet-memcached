@@ -14,42 +14,34 @@
 #
 
 class memcached (
-    $memcached_port = '11211',
-    $maxconn = '1024',
-    $cachesize = '64'
-    ) {
+  $memcached_user = $memcached::params::memcached_user,
+  $memcached_port = $memcached::params::memcached_port,
+  $maxconn = $memcached::params::maxconn,
+  $cachesize = $memcached::params::cachesize,
+  $memcached_options = $memcached_options,
+) inherits memcached::params {
+  $memcached_config_file = $memcached::params::memcached_config_file
+  $memcached_template_file = $memcached::params::memcached_template_file
 
-    package { "memcached":
-        ensure => installed
-    }
+  package { 'memcached':
+    ensure => installed
+  }
 
-    $memcached_config_file = $::operatingsystem ? {
-        # FIXME: Debian based distros not tested yet
-        /Debian|Ubuntu/         => "/etc/memcached.conf",
-        /RedHat|CentOs|Fedora/  => "/etc/sysconfig/memcached",
-        default                 => "/etc/memcached.conf"
-    }
+  file { $memcached_config_file:
+    ensure  => present,
+    mode    => '0444',
+    owner   => root,
+    group   => root,
+    content => template($memcached_template_file),
+    require => Package['memcached'],
+    notify  => Service['memcached']
+  }
 
-    $memcached_template_file = $::operatingsystem ? {
-        /Debian|Ubuntu/         => "memcached/memcached.debian.erb",
-        default                 => "memcached/memcached.sysconfig.erb"
-    }
-
-    file {
-        "$memcached_config_file":
-            mode    => 0444,
-            owner   => root,
-            group   => root,
-            ensure  => present,
-            content => template($memcached_template_file),
-            require => Package["memcached"],
-    }
-
-    service { "memcached":
-        ensure      => true,
-        enable      => true,
-        hasstatus   => true,
-        hasrestart  => true,
-        require     => [File["$memcached_config_file"],Package["memcached"]],
-    }
+  service { 'memcached':
+    ensure     => true,
+    enable     => true,
+    hasstatus  => true,
+    hasrestart => true,
+    require    => [File[$memcached_config_file],Package['memcached']],
+  }
 }
