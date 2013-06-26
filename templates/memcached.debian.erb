@@ -7,9 +7,9 @@ logfile /var/log/memcached.log
 
 -l 127.0.0.1
 
--p 11211
+-p <%= memcached_port %>
 
--u nobody
+-u <%= memcached_user %>
 
 -c <%= maxconn %>
 
